@@ -48,7 +48,6 @@ func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snow
 		return
 	}
 
-	// Sending a speaking signal is mandatory before sending voice data
 	err = voice.StartSpeaking()
 	if err != nil {
 		log.Printf("Start Speaking error: %+v\n", err)
@@ -76,7 +75,6 @@ func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snow
 
 func loadDCA() ([]byte, error) {
 	buf, err := ioutil.ReadFile("assets/zaht.dca")
-	// f, err := os.Open("assets/zaht.dca")
 	if err != nil {
 		return nil, err
 	}
