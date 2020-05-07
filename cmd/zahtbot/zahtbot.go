@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/andersfylling/disgord"
 )
@@ -10,16 +11,25 @@ import (
 // ZahtBot is the Discord ZahtBot.
 type ZahtBot struct {
 	*disgord.Client
+
+	dca []byte
 }
 
 // NewZahtBot creates a new ZahtBot.
 func NewZahtBot(botToken string) *ZahtBot {
+	dca, err := loadDCA()
+	if err != nil {
+		log.Printf("Load DCA error: %+v\n", err)
+		panic(err)
+	}
+
 	zb := &ZahtBot{
 		Client: disgord.New(disgord.Config{
 			ProjectName: "ZahtBot",
 			BotToken:    botToken,
 			Logger:      disgord.DefaultLogger(false),
 		}),
+		dca: dca,
 	}
 
 	zb.On(disgord.EvtMessageCreate, func(session disgord.Session, m *disgord.MessageCreate) {
@@ -32,19 +42,11 @@ func NewZahtBot(botToken string) *ZahtBot {
 }
 
 func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snowflake) {
-	f, err := os.Open("assets/zaht.dca")
-	if err != nil {
-		log.Printf("File Open error: %+v\n", err)
-		return
-	}
-	defer f.Close()
-
 	voice, err := session.VoiceConnect(guildID, disgord.ParseSnowflakeString("559468274031656963"))
 	if err != nil {
 		log.Printf("Voice Connect error: %+v\n", err)
 		return
 	}
-	defer zb.closeVoice(voice)
 
 	// Sending a speaking signal is mandatory before sending voice data
 	err = voice.StartSpeaking()
@@ -53,7 +55,7 @@ func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snow
 		return
 	}
 
-	err = voice.SendDCA(f)
+	err = voice.SendDCA(bytes.NewReader(zb.dca))
 	if err != nil {
 		log.Printf("Send DCA error: %+v\n", err)
 		return
@@ -64,12 +66,20 @@ func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snow
 		log.Printf("Stop Speaking error: %+v\n", err)
 		return
 	}
-}
 
-func (zb *ZahtBot) closeVoice(voice disgord.VoiceConnection) {
-	err := voice.Close()
+	err = voice.Close()
 	if err != nil {
 		log.Printf("Voice Close error\n")
-		panic(err)
+		return
 	}
+}
+
+func loadDCA() ([]byte, error) {
+	buf, err := ioutil.ReadFile("assets/zaht.dca")
+	// f, err := os.Open("assets/zaht.dca")
+	if err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
