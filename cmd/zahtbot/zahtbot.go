@@ -8,6 +8,8 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
+var hardcodedChannelID = disgord.ParseSnowflakeString("559468274031656963")
+
 // ZahtBot is the Discord ZahtBot.
 type ZahtBot struct {
 	*disgord.Client
@@ -16,11 +18,12 @@ type ZahtBot struct {
 }
 
 // NewZahtBot creates a new ZahtBot.
-func NewZahtBot(botToken string) *ZahtBot {
+func NewZahtBot(botToken string) (*ZahtBot, error) {
+	// Zaht audio file
 	dca, err := loadDCA()
 	if err != nil {
 		log.Printf("Load DCA error: %+v\n", err)
-		panic(err)
+		return nil, err
 	}
 
 	zb := &ZahtBot{
@@ -32,21 +35,30 @@ func NewZahtBot(botToken string) *ZahtBot {
 		dca: dca,
 	}
 
-	zb.On(disgord.EvtMessageCreate, func(session disgord.Session, m *disgord.MessageCreate) {
-		if m.Message.Content == "!zaht" {
-			zb.zaht(session, m.Message.GuildID, m.Message.ChannelID)
-		}
+	zb.Ready(func() {
+		log.Println("ZahtBot is online!")
 	})
 
-	return zb
+	zb.On(disgord.EvtMessageCreate, zb.mux)
+
+	return zb, nil
 }
 
-func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snowflake) {
-	voice, err := session.VoiceConnect(guildID, disgord.ParseSnowflakeString("559468274031656963"))
+func (zb *ZahtBot) mux(session disgord.Session, m *disgord.MessageCreate) {
+	if m.Message.Content == "!zaht" {
+		zb.zaht(session, m)
+	}
+}
+
+func (zb *ZahtBot) zaht(session disgord.Session, m *disgord.MessageCreate) {
+	log.Println("Zahting...")
+
+	voice, err := session.VoiceConnect(m.Message.GuildID, hardcodedChannelID)
 	if err != nil {
 		log.Printf("Voice Connect error: %+v\n", err)
 		return
 	}
+	defer voice.Close()
 
 	err = voice.StartSpeaking()
 	if err != nil {
@@ -66,11 +78,7 @@ func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snow
 		return
 	}
 
-	err = voice.Close()
-	if err != nil {
-		log.Printf("Voice Close error\n")
-		return
-	}
+	log.Println("Zahted!")
 }
 
 func loadDCA() ([]byte, error) {

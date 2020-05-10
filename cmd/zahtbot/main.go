@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 )
 
@@ -15,5 +16,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	defer NewZahtBot(*token).StayConnectedUntilInterrupted(context.Background())
+	zb, err := NewZahtBot(*token)
+	if err != nil {
+		log.Printf("New ZahtBot error")
+		panic(err)
+	}
+	defer zb.StayConnectedUntilInterrupted(context.Background())
 }
