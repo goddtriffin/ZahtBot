@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/andersfylling/disgord"
+	"github.com/sirupsen/logrus"
 )
 
 var hardcodedChannelID = disgord.ParseSnowflakeString("559468274031656963")
@@ -30,7 +32,12 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		Client: disgord.New(disgord.Config{
 			ProjectName: "ZahtBot",
 			BotToken:    botToken,
-			Logger:      disgord.DefaultLogger(false),
+			Logger: &logrus.Logger{
+				Out:       os.Stderr,
+				Formatter: new(logrus.JSONFormatter),
+				Hooks:     make(logrus.LevelHooks),
+				Level:     logrus.InfoLevel,
+			},
 		}),
 		dca: dca,
 	}
