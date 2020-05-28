@@ -36,7 +36,7 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 				Out:       os.Stderr,
 				Formatter: new(logrus.JSONFormatter),
 				Hooks:     make(logrus.LevelHooks),
-				Level:     logrus.InfoLevel,
+				Level:     logrus.DebugLevel,
 			},
 		}),
 		dca: dca,
