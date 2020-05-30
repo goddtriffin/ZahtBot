@@ -104,7 +104,7 @@ func (zb *ZahtBot) zahtCommand(session disgord.Session, m *disgord.MessageCreate
 
 func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snowflake) {
 	if zb.isChannelActive(channelID) {
-		zb.Logger().Debug("already Zahting in channel, skipping")
+		zb.Logger().Debug(fmt.Sprintf("already Zahting in channel %s, skipping\n", channelID))
 		return
 	}
 	zb.setChannelActivity(channelID, true)
