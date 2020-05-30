@@ -13,6 +13,7 @@ usage:
 	@echo "make stopdocker - stops the Docker container"
 	@echo "make removedocker - removes the Docker container"
 	@echo "make memusage - displays the memory usage of the currently running Docker container"
+	@echo "make logs - displays logs"
 
 .PHONY: buildlocal
 buildlocal:
@@ -49,3 +50,7 @@ removedocker:
 .PHONY: memusage
 memusage:
 	docker stats zaht_bot --no-stream --format "{{.Container}}: {{.MemUsage}}"
+
+.PHONY: logs
+logs:
+	docker logs zaht_bot

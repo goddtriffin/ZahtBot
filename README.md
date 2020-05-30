@@ -26,6 +26,8 @@ In your shell, run: `export ZAHT_BOT_TOKEN=<token>`. Replace `<token>` with your
   - removes the Docker container
 - `make memusage`
   - displays the memory usage of the currently running Docker container
+- `make logs`
+  - displays logs
 
 ## DCA File Format
 

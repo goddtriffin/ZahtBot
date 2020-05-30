@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -59,6 +58,7 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 	filter, _ := std.NewMsgFilter(context.Background(), zb)
 	filter.SetPrefix("!")
 
+	// !zaht [optional: <mention> <mention> ...]
 	zb.On(
 		disgord.EvtMessageCreate,
 
@@ -67,95 +67,18 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		filterNonDM,
 
 		filterNonZahtCommands,
-		zb.zahtCommand,
+		zb.commandZaht,
 	)
 
 	return zb, nil
 }
 
-func (zb *ZahtBot) zahtCommand(session disgord.Session, m *disgord.MessageCreate) {
-	channelIDs := []disgord.Snowflake{}
-
-	// TODO get voice channels of all mentioned users
-	if len(m.Message.Mentions) > 0 {
-		for _, user := range m.Message.Mentions {
-			zb.Logger().Debug(fmt.Sprintf("mentions: %s\n", user.String()))
-		}
-	}
-
-	// manually select channel IDs based on guild
-	if m.Message.GuildID == purdoobahGuildID {
-		channelIDs = append(channelIDs, purdoobahChannelID)
-	} else if m.Message.GuildID == otherPurdoobahGuildID {
-		channelIDs = append(channelIDs, otherPurdoobahChannelID)
-	} else {
-		zb.Logger().Debug(fmt.Sprintf("unknown Guild ID: %s\n", m.Message.GuildID))
-		return
-	}
-
-	if len(channelIDs) == 0 {
-		// TODO if no mentions, default to channel ID of voice channel of original message author
-	}
-
-	for _, channelID := range channelIDs {
-		go zb.zaht(session, m.Message.GuildID, channelID)
-	}
-}
-
-func (zb *ZahtBot) zaht(session disgord.Session, guildID, channelID disgord.Snowflake) {
-	if zb.isChannelActive(channelID) {
-		zb.Logger().Debug(fmt.Sprintf("already Zahting in channel %s, skipping\n", channelID))
-		return
-	}
-	zb.setChannelActivity(channelID, true)
-
-	zb.Logger().Info(fmt.Sprintf("Zahting...\tGuild: %s\tChannel: %v\n", guildID, channelID))
-
-	voice, err := session.VoiceConnect(guildID, channelID)
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Voice Connect error: %+v\n", err))
-		zb.setChannelActivity(channelID, false)
-		return
-	}
-
-	err = voice.StartSpeaking()
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Start Speaking error: %+v\n", err))
-		zb.setChannelActivity(channelID, false)
-		return
-	}
-
-	err = voice.SendDCA(bytes.NewReader(zb.dca))
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Send DCA error: %+v\n", err))
-		zb.setChannelActivity(channelID, false)
-		return
-	}
-
-	err = voice.StopSpeaking()
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Stop Speaking error: %+v\n", err))
-		zb.setChannelActivity(channelID, false)
-		return
-	}
-
-	err = voice.Close()
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Voice Close error: %+v\n", err))
-		zb.setChannelActivity(channelID, false)
-		return
-	}
-
-	zb.setChannelActivity(channelID, false)
-	zb.Logger().Info(fmt.Sprintf("Zahted!\tGuild: %s\tChannel: %v\n", guildID, channelID))
-}
-
-func (zb *ZahtBot) isChannelActive(channelID disgord.Snowflake) bool {
+func (zb *ZahtBot) isVoiceChannelActive(channelID disgord.Snowflake) bool {
 	_, ok := zb.activeChannels[channelID]
 	return ok
 }
 
-func (zb *ZahtBot) setChannelActivity(channelID disgord.Snowflake, active bool) {
+func (zb *ZahtBot) setVoiceChannelActivity(channelID disgord.Snowflake, active bool) {
 	if active {
 		zb.activeChannels[channelID] = nil
 	} else {
