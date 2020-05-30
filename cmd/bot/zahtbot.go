@@ -12,10 +12,10 @@ import (
 )
 
 var purdoobahGuildID = disgord.ParseSnowflakeString("559468273255841794")
-var purdoobahChannelID = disgord.ParseSnowflakeString("707682640064413777")
+var purdoobahChannelID = disgord.ParseSnowflakeString("559468274031656963")
 
 var otherPurdoobahGuildID = disgord.ParseSnowflakeString("715262479831138345")
-var otherPurdoobahChannelID = disgord.ParseSnowflakeString("715620876061507615")
+var otherPurdoobahChannelID = disgord.ParseSnowflakeString("715262480254894142")
 
 // ZahtBot is the Discord ZahtBot.
 type ZahtBot struct {

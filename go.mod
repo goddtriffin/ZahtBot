@@ -3,7 +3,7 @@ module github.com/purdoobahs/ZahtBot
 go 1.14
 
 require (
-	github.com/andersfylling/disgord v0.17.2-0.20200530130219-de6d507c354a
+	github.com/andersfylling/disgord v0.17.2
 	github.com/klauspost/compress v1.10.6 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	go.uber.org/atomic v1.6.0 // indirect
