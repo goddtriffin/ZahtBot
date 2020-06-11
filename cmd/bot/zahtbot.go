@@ -16,6 +16,9 @@ var purdoobahChannelID = disgord.ParseSnowflakeString("559468274031656963")
 var otherPurdoobahGuildID = disgord.ParseSnowflakeString("715262479831138345")
 var otherPurdoobahChannelID = disgord.ParseSnowflakeString("715262480254894142")
 
+var bangBrosGuildID = disgord.ParseSnowflakeString("720415671514562632")
+var bangBrosChannelID = disgord.ParseSnowflakeString("720415671514562637")
+
 // ZahtBot is the Discord ZahtBot.
 type ZahtBot struct {
 	*disgord.Client

@@ -22,6 +22,8 @@ func (zb *ZahtBot) commandZaht(s disgord.Session, evt *disgord.MessageCreate) {
 		channelIDs = append(channelIDs, purdoobahChannelID)
 	} else if evt.Message.GuildID == otherPurdoobahGuildID {
 		channelIDs = append(channelIDs, otherPurdoobahChannelID)
+	} else if evt.Message.GuildID == bangBrosGuildID {
+		channelIDs = append(channelIDs, bangBrosChannelID)
 	} else {
 		zb.Logger().Debug(fmt.Sprintf("unknown Guild ID: %s\n", evt.Message.GuildID))
 		return
