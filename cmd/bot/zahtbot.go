@@ -9,6 +9,7 @@ import (
 	"github.com/andersfylling/disgord/std"
 	"github.com/purdoobahs/ZahtBot/internal/cache"
 	"github.com/purdoobahs/ZahtBot/internal/cache/memory"
+	"github.com/purdoobahs/ZahtBot/internal/command"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,6 +18,9 @@ type ZahtBot struct {
 	*disgord.Client
 
 	voiceStateCache cache.VoiceStateCache
+
+	thumbnailURL string
+	commands     []command.Command
 
 	dca            []byte
 	activeChannels map[disgord.Snowflake]interface{}
@@ -47,6 +51,13 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 
 		voiceStateCache: memory.NewVoiceStateCache(),
 
+		thumbnailURL: "https://www.cla.purdue.edu/facultyStaff/profiles/new/newfaculty-17/full/Sweet_Jonathan.jpg",
+		commands: []command.Command{
+			{Name: "help", Description: "displays help"},
+			{Name: "commands", Description: "displays commands"},
+			{Name: "zaht", Description: "ZAHTZAHTZAHTZAHTZAHTZAHT"},
+		},
+
 		dca:            dca,
 		activeChannels: map[disgord.Snowflake]interface{}{},
 	}
@@ -58,6 +69,30 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 	// filters
 	filter, _ := std.NewMsgFilter(context.Background(), zb)
 	filter.SetPrefix("!")
+
+	// !help
+	zb.On(
+		disgord.EvtMessageCreate,
+
+		filter.NotByBot,
+		filter.HasPrefix,
+		filterNonDM,
+
+		filterNonHelpCommands,
+		zb.commandHelp,
+	)
+
+	// !commands
+	zb.On(
+		disgord.EvtMessageCreate,
+
+		filter.NotByBot,
+		filter.HasPrefix,
+		filterNonDM,
+
+		filterNonCommandsCommands,
+		zb.commandCommands,
+	)
 
 	// !zaht
 	zb.On(
@@ -75,6 +110,13 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 	zb.On(disgord.EvtVoiceStateUpdate, zb.updateVoiceState)
 
 	return zb, nil
+}
+
+func (zb *ZahtBot) reply(session disgord.Session, evt *disgord.MessageCreate, reply interface{}) {
+	_, err := evt.Message.Reply(context.Background(), session, reply)
+	if err != nil {
+		zb.Logger().Error(fmt.Sprintf("reply error: %+v\n", err))
+	}
 }
 
 // getVoiceChannelID retrieves the voice channel ID of the message poster, if they're in one
