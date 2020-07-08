@@ -7,21 +7,16 @@ import (
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/disgord/std"
+	"github.com/purdoobahs/ZahtBot/internal/cache"
+	"github.com/purdoobahs/ZahtBot/internal/cache/memory"
 	"github.com/sirupsen/logrus"
 )
-
-var purdoobahGuildID = disgord.ParseSnowflakeString("559468273255841794")
-var purdoobahChannelID = disgord.ParseSnowflakeString("559468274031656963")
-
-var otherPurdoobahGuildID = disgord.ParseSnowflakeString("715262479831138345")
-var otherPurdoobahChannelID = disgord.ParseSnowflakeString("715262480254894142")
-
-var bangBrosGuildID = disgord.ParseSnowflakeString("720415671514562632")
-var bangBrosChannelID = disgord.ParseSnowflakeString("720415671514562637")
 
 // ZahtBot is the Discord ZahtBot.
 type ZahtBot struct {
 	*disgord.Client
+
+	voiceStateCache cache.VoiceStateCache
 
 	dca            []byte
 	activeChannels map[disgord.Snowflake]interface{}
@@ -49,6 +44,9 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 			BotToken:    botToken,
 			Logger:      logger,
 		}),
+
+		voiceStateCache: memory.NewVoiceStateCache(),
+
 		dca:            dca,
 		activeChannels: map[disgord.Snowflake]interface{}{},
 	}
@@ -61,7 +59,7 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 	filter, _ := std.NewMsgFilter(context.Background(), zb)
 	filter.SetPrefix("!")
 
-	// !zaht [optional: <mention> <mention> ...]
+	// !zaht
 	zb.On(
 		disgord.EvtMessageCreate,
 
@@ -73,7 +71,21 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		zb.commandZaht,
 	)
 
+	// Voice State Update
+	zb.On(disgord.EvtVoiceStateUpdate, zb.updateVoiceState)
+
 	return zb, nil
+}
+
+// getVoiceChannelID retrieves the voice channel ID of the message poster, if they're in one
+func (zb *ZahtBot) getVoiceChannelID(session disgord.Session, evt *disgord.MessageCreate) disgord.Snowflake {
+	_, vs := zb.voiceStateCache.GetVoiceState(evt.Message.Author.ID)
+	if vs == nil {
+		zb.Logger().Info(fmt.Sprintf("%s (%s) is not in a voice channel\n", evt.Message.Author.Username, evt.Message.Author.ID))
+		return 0
+	}
+
+	return vs.ChannelID
 }
 
 func (zb *ZahtBot) isVoiceChannelActive(channelID disgord.Snowflake) bool {
@@ -81,10 +93,10 @@ func (zb *ZahtBot) isVoiceChannelActive(channelID disgord.Snowflake) bool {
 	return ok
 }
 
-func (zb *ZahtBot) setVoiceChannelActivity(channelID disgord.Snowflake, active bool) {
-	if active {
-		zb.activeChannels[channelID] = nil
-	} else {
-		delete(zb.activeChannels, channelID)
-	}
+func (zb *ZahtBot) lockVoiceChannel(channelID disgord.Snowflake, soundName string) {
+	zb.activeChannels[channelID] = soundName
+}
+
+func (zb *ZahtBot) unlockVoiceChannel(channelID disgord.Snowflake) {
+	delete(zb.activeChannels, channelID)
 }
