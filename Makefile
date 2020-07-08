@@ -17,7 +17,7 @@ usage:
 
 .PHONY: buildlocal
 buildlocal:
-	CGO_ENABLED=0 go build -o bin/bot ./...
+	CGO_ENABLED=0 go build -o bin/bot ./cmd/bot
 
 .PHONY: runlocal
 runlocal: buildlocal
