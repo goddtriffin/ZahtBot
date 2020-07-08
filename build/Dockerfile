@@ -4,7 +4,7 @@ RUN apk update && apk add --no-cache git ca-certificates tzdata && update-ca-cer
 
 WORKDIR /ZahtBot
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/bot ./...
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/bot ./cmd/bot
 
 FROM alpine:3.11.6
 
