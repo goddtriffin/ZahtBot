@@ -6,31 +6,18 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
-func (zb *ZahtBot) updateVoiceState(session disgord.Session, evt *disgord.VoiceStateUpdate) {
-	user, err := session.GetUser(evt.Ctx, evt.UserID)
-	if err != nil {
-		zb.Logger().Error(fmt.Sprintf("Get User error: %+v\n", err))
-	}
-
-	if !user.Bot {
-		if evt.ChannelID.IsZero() {
-			_, vs := zb.voiceStateCache.GetVoiceState(evt.UserID)
-			if vs == nil {
-				zb.Logger().Debug(fmt.Sprintf("%s left voice channel\n", evt.UserID))
-			} else {
-				zb.Logger().Debug(fmt.Sprintf("%s left voice channel %s\n", evt.UserID, vs.ChannelID))
-			}
-
-			zb.voiceStateCache.DeleteVoiceState(evt.UserID)
-		} else {
-			_, vs := zb.voiceStateCache.GetVoiceState(evt.UserID)
-			if vs == nil {
-				zb.voiceStateCache.AddVoiceState(evt.VoiceState)
-				zb.Logger().Debug(fmt.Sprintf("%s joined voice channel %s\n", evt.UserID, evt.VoiceState.ChannelID))
-			} else {
-				zb.voiceStateCache.UpdateVoiceState(evt.UserID, evt.VoiceState)
-				zb.Logger().Debug(fmt.Sprintf("%s moved voice channel from %s to %s\n", evt.UserID, vs.ChannelID, evt.VoiceState.ChannelID))
-			}
+func (zb *ZahtBot) guildCreate(session disgord.Session, evt *disgord.GuildCreate) {
+	for _, vs := range evt.Guild.VoiceStates {
+		err := zb.voiceStateCache.Handle(session, vs)
+		if err != nil {
+			zb.Logger().Error(fmt.Sprintf("voiceStateCache Handle error: %+v\n", err))
 		}
+	}
+}
+
+func (zb *ZahtBot) voiceStateUpdate(session disgord.Session, evt *disgord.VoiceStateUpdate) {
+	err := zb.voiceStateCache.Handle(session, evt.VoiceState)
+	if err != nil {
+		zb.Logger().Error(fmt.Sprintf("voiceStateCache Handle error: %+v\n", err))
 	}
 }

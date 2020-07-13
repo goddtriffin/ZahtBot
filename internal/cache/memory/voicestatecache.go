@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"context"
+
 	"github.com/andersfylling/disgord"
 )
 
@@ -14,6 +16,35 @@ func NewVoiceStateCache() *VoiceStateCache {
 	return &VoiceStateCache{
 		voiceStates: []*disgord.VoiceState{},
 	}
+}
+
+// Handle handles a voice state event.
+func (c *VoiceStateCache) Handle(session disgord.Session, voiceState *disgord.VoiceState) error {
+	// get user who triggered voice state update event
+	user, err := session.GetUser(context.Background(), voiceState.UserID)
+	if err != nil {
+		return err
+	}
+
+	// bots don't count
+	if !user.Bot {
+		if voiceState.ChannelID.IsZero() {
+			// no channel ID; this is a 'leave voice channel' event
+			c.DeleteVoiceState(user.ID)
+		} else {
+			// channel ID exists; user could've freshly joined a voice channel or switched to a different one
+			_, oldVoiceState := c.GetVoiceState(user.ID)
+			if oldVoiceState == nil {
+				// this is a 'freshly joined voice channel' event
+				c.AddVoiceState(voiceState)
+			} else {
+				// this is a 'moved between voice channels' event
+				c.UpdateVoiceState(voiceState.UserID, voiceState)
+			}
+		}
+	}
+
+	return nil
 }
 
 // AddVoiceState adds a Disgord voice state.
