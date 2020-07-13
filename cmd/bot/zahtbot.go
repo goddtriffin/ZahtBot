@@ -106,8 +106,11 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		zb.commandZaht,
 	)
 
+	// Guild Create (when bot joins guild)
+	zb.On(disgord.EvtGuildCreate, zb.guildCreate)
+
 	// Voice State Update
-	zb.On(disgord.EvtVoiceStateUpdate, zb.updateVoiceState)
+	zb.On(disgord.EvtVoiceStateUpdate, zb.voiceStateUpdate)
 
 	return zb, nil
 }
