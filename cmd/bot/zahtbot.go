@@ -17,7 +17,8 @@ import (
 type ZahtBot struct {
 	*disgord.Client
 
-	voiceStateCache cache.VoiceStateCache
+	voiceStateCache cache.VoiceState
+	guildStateCache cache.GuildState
 
 	thumbnailURL string
 	commands     []command.Command
@@ -50,6 +51,7 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		}),
 
 		voiceStateCache: memory.NewVoiceStateCache(),
+		guildStateCache: memory.NewGuildStateCache(),
 
 		thumbnailURL: "https://www.cla.purdue.edu/facultyStaff/profiles/new/newfaculty-17/full/Sweet_Jonathan.jpg",
 		commands: []command.Command{
@@ -131,17 +133,4 @@ func (zb *ZahtBot) getVoiceChannelID(session disgord.Session, evt *disgord.Messa
 	}
 
 	return vs.ChannelID
-}
-
-func (zb *ZahtBot) isVoiceChannelActive(channelID disgord.Snowflake) bool {
-	_, ok := zb.activeChannels[channelID]
-	return ok
-}
-
-func (zb *ZahtBot) lockVoiceChannel(channelID disgord.Snowflake, soundName string) {
-	zb.activeChannels[channelID] = soundName
-}
-
-func (zb *ZahtBot) unlockVoiceChannel(channelID disgord.Snowflake) {
-	delete(zb.activeChannels, channelID)
 }
