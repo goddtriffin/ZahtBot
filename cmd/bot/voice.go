@@ -13,49 +13,49 @@ func (zb *ZahtBot) voice(session disgord.Session, guildID, channelID disgord.Sno
 		return
 	}
 
-	if zb.isVoiceChannelActive(channelID) {
-		zb.Logger().Debug(fmt.Sprintf("already in channel %s (playing: %s), skipping\n", channelID, zb.activeChannels[channelID]))
+	if active, activeChannelID, soundName := zb.guildStateCache.IsActive(guildID); active {
+		zb.Logger().Debug(fmt.Sprintf("already playing %s\tguild: %s\tchannel: %s\n", soundName, guildID, activeChannelID))
 		return
 	}
-	zb.lockVoiceChannel(channelID, soundName)
+	zb.guildStateCache.Lock(guildID, channelID, soundName)
 
 	zb.Logger().Info(fmt.Sprintf("Playing %s...\tGuild: %s\tChannel: %v\n", soundName, guildID, channelID))
 
 	voice, err := session.VoiceConnect(guildID, channelID)
 	if err != nil {
 		zb.Logger().Error(fmt.Sprintf("Voice Connect error: %+v\n", err))
-		zb.unlockVoiceChannel(channelID)
+		zb.guildStateCache.Unlock(guildID)
 		return
 	}
 
 	err = voice.StartSpeaking()
 	if err != nil {
 		zb.Logger().Error(fmt.Sprintf("Start Speaking error: %+v\n", err))
-		zb.unlockVoiceChannel(channelID)
+		zb.guildStateCache.Unlock(guildID)
 		return
 	}
 
 	err = voice.SendDCA(bytes.NewReader(sound))
 	if err != nil {
 		zb.Logger().Error(fmt.Sprintf("Send DCA error: %+v\n", err))
-		zb.unlockVoiceChannel(channelID)
+		zb.guildStateCache.Unlock(guildID)
 		return
 	}
 
 	err = voice.StopSpeaking()
 	if err != nil {
 		zb.Logger().Error(fmt.Sprintf("Stop Speaking error: %+v\n", err))
-		zb.unlockVoiceChannel(channelID)
+		zb.guildStateCache.Unlock(guildID)
 		return
 	}
 
 	err = voice.Close()
 	if err != nil {
 		zb.Logger().Error(fmt.Sprintf("Voice Close error: %+v\n", err))
-		zb.unlockVoiceChannel(channelID)
+		zb.guildStateCache.Unlock(guildID)
 		return
 	}
 
-	zb.unlockVoiceChannel(channelID)
+	zb.guildStateCache.Unlock(guildID)
 	zb.Logger().Info(fmt.Sprintf("Finished playing %s!\tGuild: %s\tChannel: %v\n", soundName, guildID, channelID))
 }

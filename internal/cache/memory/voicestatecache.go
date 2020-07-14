@@ -2,13 +2,15 @@ package memory
 
 import (
 	"context"
+	"sync"
 
 	"github.com/andersfylling/disgord"
 )
 
-// VoiceStateCache is a cache.
+// VoiceStateCache is a Disgord voice state cache.
 type VoiceStateCache struct {
 	voiceStates []*disgord.VoiceState
+	mutex       sync.RWMutex
 }
 
 // NewVoiceStateCache creates a new VoiceStateCache.
@@ -53,6 +55,9 @@ func (c *VoiceStateCache) AddVoiceState(vs *disgord.VoiceState) {
 		return
 	}
 
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	c.voiceStates = append(c.voiceStates, vs)
 }
 
@@ -61,6 +66,9 @@ func (c *VoiceStateCache) GetVoiceState(userID disgord.Snowflake) (int, *disgord
 	if userID.IsZero() {
 		return -1, nil
 	}
+
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 
 	for i, vs := range c.voiceStates {
 		if vs.UserID == userID {
@@ -79,8 +87,12 @@ func (c *VoiceStateCache) UpdateVoiceState(userID disgord.Snowflake, vs *disgord
 
 	i, _ := c.GetVoiceState(userID)
 	if i == -1 {
+		c.AddVoiceState(vs)
 		return
 	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	c.voiceStates[i] = vs
 }
@@ -95,6 +107,9 @@ func (c *VoiceStateCache) DeleteVoiceState(userID disgord.Snowflake) {
 	if i == -1 {
 		return
 	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	c.voiceStates = append(c.voiceStates[:i], c.voiceStates[i+1:]...)
 }
