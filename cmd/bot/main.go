@@ -18,8 +18,13 @@ func main() {
 
 	zb, err := NewZahtBot(*token)
 	if err != nil {
-		log.Printf("New ZahtBot error")
+		log.Println("failed to initialize ZahtBot")
 		panic(err)
 	}
-	defer zb.StayConnectedUntilInterrupted(context.Background())
+	defer func() {
+		err = zb.StayConnectedUntilInterrupted(context.Background())
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 }

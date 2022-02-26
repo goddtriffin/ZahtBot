@@ -1,54 +1,70 @@
-.DEFAULT_GOAL := usage
+$(VERBOSE).SILENT:
+.DEFAULT_GOAL := help
 
-.PHONY: usage
-usage:
-	@echo "Usage:"
-	@echo "=========="
-	@echo "make usage - display Makefile target info"
-	@echo "make buildlocal - builds the binary locally"
-	@echo "make runlocal - runs the binary locally"
-	@echo "make builddocker - builds the binary and Docker container"
-	@echo "make rundocker - creates and runs a new Docker container"
-	@echo "make startdocker - resumes a stopped Docker container"
-	@echo "make stopdocker - stops the Docker container"
-	@echo "make removedocker - removes the Docker container"
-	@echo "make memusage - displays the memory usage of the currently running Docker container"
-	@echo "make logs - displays logs"
+.PHONY: help
+help: # Prints out help
+	@IFS=$$'\n' ; \
+	help_lines=(`fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##/:/'`); \
+	printf "%-30s %s\n" "target" "help" ; \
+	printf "%-30s %s\n" "------" "----" ; \
+	for help_line in $${help_lines[@]}; do \
+			IFS=$$':' ; \
+			help_split=($$help_line) ; \
+			help_command=`echo $${help_split[0]} | sed -e 's/^ *//' -e 's/ *$$//'` ; \
+			help_info=`echo $${help_split[2]} | sed -e 's/^ *//' -e 's/ *$$//'` ; \
+			printf '\033[36m'; \
+			printf "%-30s %s" $$help_command ; \
+			printf '\033[0m'; \
+			printf "%s\n" $$help_info; \
+	done
+	@echo
 
-.PHONY: buildlocal
-buildlocal:
+.PHONY: build
+build:
 	CGO_ENABLED=0 go build -o bin/bot ./cmd/bot
 
-.PHONY: runlocal
-runlocal: buildlocal
+.PHONY: dev
+dev: build
 	./bin/bot -token=$(ZAHT_BOT_TOKEN)
 
-.PHONY: builddocker
-builddocker:
-	docker build --tag zaht-bot --file build/Dockerfile .
+.PHONY: build_docker
+build_docker:
+	docker build --tag goddtriffin/zaht-bot:latest --file deployment/Dockerfile .
 
-.PHONY: rundocker
-rundocker: builddocker
+.PHONY: run_docker
+run_docker: build_docker
 	docker run \
 	--name "zaht_bot" \
 	-d --restart unless-stopped \
+	-p 8080:8080 \
 	-e ZAHT_BOT_TOKEN \
-	zaht-bot
+	goddtriffin/zaht-bot:latest
 
-.PHONY: startdocker
-startdocker:
+.PHONY: start_docker
+start_docker:
 	docker start zaht_bot
 
-.PHONY: stopdocker
-stopdocker:
+.PHONY: stop_docker
+stop_docker:
 	docker stop zaht_bot
 
-.PHONY: removedocker
-removedocker:
+.PHONY: remove_docker
+remove_docker:
 	docker rm zaht_bot
 
-.PHONY: memusage
-memusage:
+.PHONY: push_docker
+push_docker: ## pushes new Docker image to Docker Hub
+	docker push goddtriffin/zaht-bot:latest
+
+.PHONY: restart_deployment
+restart_deployment: ## restarts all pods in the k8s deployment
+	kubectl rollout restart deployment zaht-bot
+
+.PHONY: deploy
+deploy: build_docker push_docker restart_deployment # builds/pushes new docker image at :latest and restarts k8s deployment
+
+.PHONY: mem_usage
+mem_usage:
 	docker stats zaht_bot --no-stream --format "{{.Container}}: {{.MemUsage}}"
 
 .PHONY: logs

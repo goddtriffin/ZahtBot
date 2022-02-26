@@ -16,15 +16,7 @@ func filterNonDM(evt interface{}) interface{} {
 
 func filterNonHelpCommands(evt interface{}) interface{} {
 	m := evt.(*disgord.MessageCreate)
-	if strings.ToLower(m.Message.Content) != "!help" {
-		return nil
-	}
-	return evt
-}
-
-func filterNonCommandsCommands(evt interface{}) interface{} {
-	m := evt.(*disgord.MessageCreate)
-	if strings.ToLower(m.Message.Content) != "!commands" {
+	if strings.ToLower(m.Message.Content) != "/help" {
 		return nil
 	}
 	return evt
@@ -32,7 +24,7 @@ func filterNonCommandsCommands(evt interface{}) interface{} {
 
 func filterNonZahtCommands(evt interface{}) interface{} {
 	m := evt.(*disgord.MessageCreate)
-	if !strings.HasPrefix(m.Message.Content, "!zaht") {
+	if !strings.HasPrefix(m.Message.Content, "/zaht") {
 		return nil
 	}
 	return evt
