@@ -20,19 +20,19 @@ help: # Prints out help
 	@echo
 
 .PHONY: build
-build:
+build: ## builds the binary locally
 	CGO_ENABLED=0 go build -o bin/bot ./cmd/bot
 
 .PHONY: dev
-dev: build
+dev: build ## runs the binary locally
 	./bin/bot -token=$(ZAHT_BOT_TOKEN)
 
 .PHONY: build_docker
-build_docker:
+build_docker: ## builds the binary and Docker container
 	docker build --tag goddtriffin/zaht-bot:latest --file deployment/Dockerfile .
 
 .PHONY: run_docker
-run_docker: build_docker
+run_docker: build_docker ## creates and runs a new Docker container
 	docker run \
 	--name "zaht_bot" \
 	-d --restart unless-stopped \
@@ -41,15 +41,15 @@ run_docker: build_docker
 	goddtriffin/zaht-bot:latest
 
 .PHONY: start_docker
-start_docker:
+start_docker: ## resumes a stopped Docker container
 	docker start zaht_bot
 
 .PHONY: stop_docker
-stop_docker:
+stop_docker: ## stops the Docker container
 	docker stop zaht_bot
 
 .PHONY: remove_docker
-remove_docker:
+remove_docker: ## removes the Docker container
 	docker rm zaht_bot
 
 .PHONY: push_docker
@@ -64,9 +64,9 @@ restart_deployment: ## restarts all pods in the k8s deployment
 deploy: build_docker push_docker restart_deployment # builds/pushes new docker image at :latest and restarts k8s deployment
 
 .PHONY: mem_usage
-mem_usage:
+mem_usage: ## displays the memory usage of the currently running Docker container
 	docker stats zaht_bot --no-stream --format "{{.Container}}: {{.MemUsage}}"
 
 .PHONY: logs
-logs:
+logs: ## displays logs from the currently running Docker container
 	docker logs zaht_bot

@@ -2,7 +2,7 @@ package command
 
 import "fmt"
 
-const commandSignal = "!"
+const commandSignal = "/"
 
 // Command is a Discord bot command.
 type Command struct {

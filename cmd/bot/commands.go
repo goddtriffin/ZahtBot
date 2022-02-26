@@ -24,7 +24,7 @@ func (zb *ZahtBot) commandHelp(session disgord.Session, evt *disgord.MessageCrea
 		Thumbnail:   &disgord.EmbedThumbnail{URL: zb.thumbnailURL},
 	})
 
-	zb.Logger().Info(fmt.Sprintf("%s (%s) called !commands\n", evt.Message.Author.Username, evt.Message.Author.ID))
+	zb.Logger().Info(fmt.Sprintf("%s (%s) called /help\n", evt.Message.Author.Username, evt.Message.Author.ID))
 }
 
 func (zb *ZahtBot) commandZaht(session disgord.Session, evt *disgord.MessageCreate) {
