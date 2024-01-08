@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/disgord/std"
@@ -56,7 +58,6 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		thumbnailURL: "https://www.cla.purdue.edu/facultyStaff/profiles/new/newfaculty-17/full/Sweet_Jonathan.jpg",
 		commands: []command.Command{
 			{Name: "help", Description: "displays help"},
-			{Name: "commands", Description: "displays commands"},
 			{Name: "zaht", Description: "ZAHTZAHTZAHTZAHTZAHTZAHT"},
 		},
 
@@ -66,13 +67,14 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 
 	zb.Ready(func() {
 		zb.Logger().Info("ZahtBot is online!")
+		zb.startHealthEndpointServer()
 	})
 
 	// filters
 	filter, _ := std.NewMsgFilter(context.Background(), zb)
-	filter.SetPrefix("!")
+	filter.SetPrefix("/")
 
-	// !help
+	// /help
 	zb.On(
 		disgord.EvtMessageCreate,
 
@@ -84,19 +86,7 @@ func NewZahtBot(botToken string) (*ZahtBot, error) {
 		zb.commandHelp,
 	)
 
-	// !commands
-	zb.On(
-		disgord.EvtMessageCreate,
-
-		filter.NotByBot,
-		filter.HasPrefix,
-		filterNonDM,
-
-		filterNonCommandsCommands,
-		zb.commandCommands,
-	)
-
-	// !zaht
+	// /zaht
 	zb.On(
 		disgord.EvtMessageCreate,
 
@@ -133,4 +123,39 @@ func (zb *ZahtBot) getVoiceChannelID(session disgord.Session, evt *disgord.Messa
 	}
 
 	return vs.ChannelID
+}
+
+func (zb *ZahtBot) startHealthEndpointServer() {
+	// create the server
+	addr := ":8080"
+	srv := &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			zb.Logger().Info(fmt.Sprintf("%s %s", req.Method, req.URL.Path))
+
+			if req.URL.Path != "/api/v1/health" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte("OK"))
+			if err != nil {
+				zb.Logger().Error(err)
+				return
+			}
+		}),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	// run the server
+	zb.Logger().Info(fmt.Sprintf("Health checkpoint is being served at: %s/api/v1/health", addr))
+	err := srv.ListenAndServe()
+	if err != nil {
+		// print error on exit
+		zb.Logger().Error(err)
+		os.Exit(1)
+	}
 }
